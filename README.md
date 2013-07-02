@@ -129,7 +129,17 @@ For the exact spec, see below, [Usage][]. Regarding the 'pool', also see below.
 
 Emysql uses a sophisticated connection pooling mechanism.
 
-	emysql:add_pool(my_pool, 1, "myuser", "mypass", "myhost", 3306, "mydatabase", utf8).
+	emysql:add_pool(my_pool, 1, "myuser", "mypass", "myhost", 3306,
+      "mydatabase", utf8).
+
+Arbitrary post-connection start-up commands can be added as a list of binaries
+to the last `emysql:add_pool/9` argument:
+
+	emysql:add_pool(my_pool, 1, "myuser", "mypass", "myhost", 3306,
+      "mydatabase", utf8, [
+          <<"SET TIME_ZONE='+00:00'">>,
+          <<"SET SQL_MODE='STRICT_ALL_TABLES'">>
+      ]).
 
 ### Running Hello World
 
@@ -470,6 +480,19 @@ The probably rare but still bad races of issue #9 have been solved at long last,
 	
 Check the test results by opening test/index.html with a browser. 
 
+### Util Tests
+For this test you need database like this:
+
+	$ mysql [-u<user> -p]
+	create database test_database;
+	grant all privileges on test_database.* to test_username@localhost identified by 'test_password';
+	flush privileges;
+
+The test suite is test/as_record_SUITE.erl. To run the test, use make:
+
+	make testutil
+
+Check the test results by opening test/index.html with a browser.
 
 ## History                                               <a name="History"></a>
 
