@@ -1,6 +1,7 @@
 %% Copyright (c) 2009
 %% Bill Warnecke <bill@rupture.com>
 %% Jacob Vorreuter <jacob.vorreuter@gmail.com>
+%% Mike Oxford <moxford@gmail.com>
 %%
 %% Permission is hereby granted, free of charge, to any person
 %% obtaining a copy of this software and associated documentation
@@ -24,9 +25,26 @@
 %% OTHER DEALINGS IN THE SOFTWARE.
 -module(emysql_util).
 -export([get_error_packet_msg/1, get_result_packet_rows/1, new_ok_packet/0]).
--export([field_names/1, as_record/4, as_record/3, length_coded_binary/1, length_coded_string/1,
-    null_terminated_string/2, asciz/1, bxor_binary/2, dualmap/3, hash/1, to_binary/1,
-    rnd/3, encode/1, encode/2, quote/1, as_proplist/1, as_dict/1]).
+-export([
+         asciz/1,
+         as_dict/1,
+         as_json/1,
+         as_proplist/1,
+         as_record/3,
+         as_record/4,
+         bxor_binary/2,
+         dualmap/3,
+         encode/1,
+         encode/2,
+         field_names/1,
+         hash/1,
+         length_coded_binary/1,
+         length_coded_string/1,
+         null_terminated_string/2,
+         quote/1,
+         rnd/3,
+         to_binary/1
+        ]).
 
 -include("emysql.hrl").
 
@@ -65,11 +83,12 @@ as_dict(Res = #result_packet{}) ->
 as_proplist(#result_packet{field_list=_Cols,rows=_Vals}) when _Cols =:= undefined, 
 							      _Vals =:= undefined ->
     [];
-as_proplist(Res = #result_packet{field_list=Cols,rows=Vals}) when is_list(Cols), 
-								  Vals =:= undefined ->
-    FieldData = emysql_util:field_names(Res),
-    RowData =  array:to_list(array:new([erlang:length(FieldData)])),
-    emysql_util:dualmap(fun(A,B)->{A,B} end, FieldData, RowData);
+as_proplist(#result_packet{field_list=_Cols,rows=_Vals}) when is_list(_Cols), 
+								  _Vals =:= undefined ->
+    [];
+as_proplist(#result_packet{field_list=_Cols,rows=_Vals}) when is_list(_Cols), 
+								  _Vals =:= [] ->
+    [];
 as_proplist(Res = #result_packet{field_list=Cols,rows=Vals}) when is_list(Cols), 
 								  is_list(Vals) ->
     FieldData = emysql_util:field_names(Res),
@@ -121,6 +140,23 @@ as_record(Result, RecordName, Fields, Fun) when is_record(Result, result_packet)
 
 as_record(Result, RecordName, Fields) when is_record(Result, result_packet), is_atom(RecordName), is_list(Fields) ->
     as_record(Result, RecordName, Fields, fun(A) -> A end).
+
+%% @spec as_json(Result) -> Result
+%% @doc package row data as erlang json (jsx/jiffy compatible)
+as_json(#result_packet { rows = Rows } = Result) ->
+    Fields = emysql_util:field_names(Result),
+    [begin
+        [{K, json_val(V)} || {K, V} <- lists:zip(Fields, Row)]
+    end || Row <- Rows].
+
+json_val(undefined) ->
+    null;
+json_val({date,{Year,Month,Day}}) ->
+    iolist_to_binary( io_lib:format("~4.4.0w-~2.2.0w-~2.2.0w", [Year, Month, Day]));
+json_val({datetime,{ {Year,Month,Day}, {Hour,Min,Sec} }}) ->
+    iolist_to_binary( io_lib:format("~4.4.0w-~2.2.0w-~2.2.0wT~2.2.0w:~2.2.0w:~2.2.0wZ", [Year, Month, Day, Hour, Min, Sec]));
+json_val(Value) ->
+    Value.
 
 length_coded_binary(<<>>) -> {<<>>, <<>>};
 length_coded_binary(<<FirstByte:8, Tail/binary>>) ->
