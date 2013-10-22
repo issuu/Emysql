@@ -38,6 +38,8 @@
         pass_connection/1, replace_connection_as_locked/2, replace_connection_as_available/2,
         find_pool/2, give_manager_control/1]).
 
+-export([initialize_pool/2]).
+
 -include("emysql.hrl").
 
 -record(state, {pools, lockers = dict:new()}).
@@ -357,23 +359,24 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+initialize_pool(PoolId, Props) ->
+    #pool{
+        pool_id = PoolId,
+        size = proplists:get_value(size, Props, 1),
+        user = proplists:get_value(user, Props),
+        password = proplists:get_value(password, Props),
+        host = proplists:get_value(host, Props),
+        port = proplists:get_value(port, Props),
+        database = proplists:get_value(database, Props),
+        encoding = proplists:get_value(encoding, Props),
+        start_cmds = proplists:get_value(start_cmds, Props, [])
+    }.
+
 initialize_pools() ->
     %% if the emysql application values are not present in the config
     %% file we will initialize and empty set of pools. Otherwise, the
     %% values defined in the config are used to initialize the state.
-    [
-        #pool{
-            pool_id = PoolId,
-            size = proplists:get_value(size, Props, 1),
-            user = proplists:get_value(user, Props),
-            password = proplists:get_value(password, Props),
-            host = proplists:get_value(host, Props),
-            port = proplists:get_value(port, Props),
-            database = proplists:get_value(database, Props),
-            encoding = proplists:get_value(encoding, Props),
-            start_cmds = proplists:get_value(start_cmds, Props, [])
-        } || {PoolId, Props} <- emysql_app:pools()
-    ].
+    [ initialize_pool(PoolId, Props) || {PoolId, Props} <- emysql_app:pools() ].
 
 find_pool(PoolId, Pools) ->
     find_pool(PoolId, Pools, []).
