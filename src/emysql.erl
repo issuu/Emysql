@@ -111,6 +111,7 @@
 -export([
             prepare/2,
             execute/2, execute/3, execute/4, execute/5,
+            transaction/2, transaction/3,
             default_timeout/0
 ]).
 
@@ -630,6 +631,22 @@ execute(PoolId, StmtName, Args, Timeout, nonblocking) when is_atom(StmtName), is
         unavailable ->
             unavailable
     end.
+
+%%@doc 事务处理，用来执行函数
+%%@param PoolId: 连接池的id
+%%@param Fun: 待执行的函数
+%%@return 返回值和上面的execute()函数一样
+transaction(PoolId, Fun) ->
+  transaction(PoolId, Fun, default_timeout()).
+
+transaction(PoolId, Fun, Timeout) ->
+  case emysql_conn_mgr:lock_connection(PoolId) of
+    Connection when is_record(Connection, connection) ->
+      monitor_work(Connection, Timeout, {emysql_conn, transaction, [Connection, Fun]});
+    Other ->
+      Other
+  end.
+
 
 %% @doc Return the field names of a result packet
 %% @end

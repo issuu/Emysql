@@ -27,7 +27,7 @@
 %% @private
 -module(emysql_conn).
 -export([set_database/2, set_encoding/2,
-        execute/3, prepare/3, unprepare/2,
+        execute/3, transaction/2, prepare/3, unprepare/2,
         open_connections/1, open_connection/1,
         reset_connection/3, close_connection/1,
         open_n_connections/2, hstate/1,
@@ -121,6 +121,51 @@ execute(Connection, StmtName, Args) when is_atom(StmtName), is_list(Args) ->
         Error ->
             Error
     end.
+
+
+%%@doc 事务处理
+%%@param Connection:连接 #connection{} 
+%%@param Fun: 待执行的函数
+%%@return 
+transaction(Connection, Fun) ->
+    case begin_transaction(Connection) of
+        #ok_packet{} ->
+            try Fun(Connection) of
+                Val ->
+                    case commit_transaction(Connection) of
+                        #ok_packet{} -> % 用这种方式检查record，很巧妙啊
+                            {atomic, Val};
+                        #error_packet{} = ErrorPacket ->
+                            {aborted, {commit_error, ErrorPacket}}
+                    end
+            catch
+                _What:Exception ->
+                    rollback_transaction(Connection),
+                    case Exception of
+                        {aborted, Reason} -> %% 这里兼容数据库错误
+                            {aborted, Reason};
+                        _ ->
+                            exit(Exception)
+                    end
+            end;
+        #error_packet{} = ErrorPacket ->
+            {aborted, {begin_error, ErrorPacket}}
+    end.
+
+%% 事务处理的三个部分
+begin_transaction(Connection) ->
+    Packet = <<?COM_QUERY, "BEGIN">>,
+    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+
+rollback_transaction(Connection) ->
+    Packet = <<?COM_QUERY, "ROLLBACK">>,
+    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+
+commit_transaction(Connection) ->
+    Packet = <<?COM_QUERY, "COMMIT">>,
+    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+
+
 
 prepare(Connection, Name, Statement) when is_atom(Name) ->
     prepare(Connection, atom_to_list(Name), Statement);
