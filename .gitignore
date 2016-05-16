@@ -23,4 +23,5 @@ test/ct_log_cache
 logs/*
 .#*
 .tags*
+.rebar
 include/crypto_compat.hrl
