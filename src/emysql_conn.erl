@@ -155,15 +155,15 @@ transaction(Connection, Fun) ->
 %% 事务处理的三个部分
 begin_transaction(Connection) ->
     Packet = <<?COM_QUERY, "BEGIN">>,
-    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+    emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
 
 rollback_transaction(Connection) ->
     Packet = <<?COM_QUERY, "ROLLBACK">>,
-    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+    emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
 
 commit_transaction(Connection) ->
     Packet = <<?COM_QUERY, "COMMIT">>,
-    emysql_tcp:send_and_recv_packet(Connection#connection.socket, Packet, 0).
+    emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
 
 
 

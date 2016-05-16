@@ -658,7 +658,7 @@ transaction(PoolId, Fun) ->
 
 transaction(PoolId, Fun, Timeout) ->
   case emysql_conn_mgr:lock_connection(PoolId) of
-    Connection when is_record(Connection, connection) ->
+    Connection when is_record(Connection, emysql_connection) ->
       monitor_work(Connection, Timeout, {emysql_conn, transaction, [Connection, Fun]});
     Other ->
       Other
