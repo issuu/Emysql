@@ -1,79 +1,14 @@
 # Emysql
 
-[![Build Status](https://travis-ci.org/Eonblast/Emysql.png?branch=master)](https://travis-ci.org/Eonblast/Emysql)
+[![Build Status](https://travis-ci.org/qingchuwudi/Emysql.svg?branch=master)](https://travis-ci.org/qingchuwudi/Emysql)
+
+This is from [Eonblast/Emysql](https://github.com/Eonblast/Emysql)
 
 To use this driver, see the [Samples] further down in this README document.
 
-<hr/>
+## Introduction
 
-Emysql implements a stable driver toward the MySQL database. It currently support fairly recent versions (somewhere around 5.3+) and it is considered fairly stable in production.
-
-The driver has several technical shortcomings:
-
-* No clear protocol / connection pool separation
-* No clear protocol / socket separation
-* A very complicated connection pool management
-* Uses the textual protocol in a lot of places where it shouldthe  binary protocol
-* The API could be better
-
-*However,* this is probably the best MySQL driver out there for Erlang. The `erlang-mysql-driver` uses a problematic connection pool design for many use cases and is not suitable for general purpose use. This driver is.
-
-# Versioning
-
-Semantic versioning is used. Versions are given as `x.y.z`:
-
-* `x` changes break backward compatibility
-* `y` changes add new functionality—but does not break compatibility backwards
-* `z` changes recognizes a new version, but is not supposed to break anything
-
-# Changelog of recent changes
-
-## Emysql 0.4.1
-
-Spring cleaning in the repository:
-
-* Removed a lot of modules which is not part of the official API from the documentation.
-* Deprecated the use of `emysql_util` for `emysql`.
-* Made tests actually do something with the `emysql_util` calls.
-* Moved function calls from `emysql_util` into the modules where they belong.
-
-Change should be backwards compatible.
-
-## Emysql 0.4.0
-
-Introduced changes by Garrett Smith:
-
-* Support connection timeouts in gen_tcp:connect/3. This allows the driver to better handle connection timeouts upon initial connections.
-* Introduce `emysql:add_pool/2` as a proplist-based way of initializing a pool. This is going to be the preferred way of initializing pools in the future.
-
-## Emysql 0.3.2
-
-* We should be on Travis CI now with full tests running
-* Pulled in lots of smaller changes which should be rather cosmetic fixes.
-* R16 warnings eliminated (Jesse Gumm)
-* Tried to consolidate simple parts of the driver
-
-## Emysql 0.3.0
-
-*Note:* Automatic conversion to the encoding of the underlying MySQL
-server was removed in the 0.3.x branch. If you specify, e.g., utf-8
-encoding, then the MySQL server will reject wrongly-encoded strings
-and data, but the *driver* will not perform any encoding by itself
-anymore.
-
-It is now the driver *callers* responsibility to ensure that data is
-properly encoded. This change makes it possible to pass binary BLOB
-data to the MySQL server once again.
-
-# Overview:
-
-This is an Erlang MySQL driver, based on a rewrite at Electronic Arts. [Easy][Samples] to use, strong [connection pooling][Adding_a_Pool], [prepared statements][Executing_Prepared_Statements] & [stored procedures][Executing_Stored_Procedures]. Optimized for a central node architecture and OLTP.
-
-While you can use mysql via ODBC, you should see better performance when using a *driver* like Emysql. For [samples][Samples] and [docs][] see below. Read the brief on [choosing][Choosing] a package and about the [history][History] of the various MySQL drivers.
-
-[Emysql][1] is a cleaner rewrite of [erlang-mysql-driver][2], see [History][]. This fork is a direct continuation of the original [emysql][1] with [fixes][], [updates][], more [documentation][docs] and [samples][Samples].
-
-**This is the master branch. Should you run into problems, please report them by opening an issue at github and try if they go away by checking out the 'stable' branch. Thank you.**
+[Eonblast/Emysql/README](https://github.com/Eonblast/Emysql/README.md)
 
 <hr/>
 
