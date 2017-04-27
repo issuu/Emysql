@@ -61,7 +61,7 @@ as_record(Res, RecName, Fields) -> emysql:as_record(Res, RecName, Fields).
 as_record(Res, RecName, Fields, Fun) -> emysql:as_record(Res, RecName, Fields, Fun).
 
 -ifdef(timestamp_support).
-timestamp() -> erlang:timestamp().
+timestamp() -> os:timestamp().
 -else.
 timestamp() -> erlang:now().
 -endif.
