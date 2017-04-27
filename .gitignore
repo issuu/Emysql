@@ -25,3 +25,7 @@ logs/*
 .tags*
 .rebar
 include/crypto_compat.hrl
+_build
+rebar3.crashdump
+rebar.lock
+.rebar3
