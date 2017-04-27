@@ -659,7 +659,7 @@ execute(PoolId, StmtName, Args, Timeout, nonblocking) when is_atom(StmtName), is
 -spec transaction(PoolId, Fun) -> Result when
       PoolId :: pid(),
       Fun    :: function(),
-      Result :: ok_packet() | result_packet() | error_packet().
+      Result :: {atomic, any()} | {aborted, any()}.
 transaction(PoolId, Fun) when is_function(Fun, 1) ->
   transaction(PoolId, Fun, default_timeout()).
 

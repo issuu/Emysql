@@ -125,7 +125,7 @@ execute(Connection, StmtName, Args) when is_atom(StmtName), is_list(Args) ->
 
 %%@doc transaction
 -spec transaction(Connection, Fun) -> Result when
-        Connection :: #connection{},
+        Connection :: #emysql_connection{},
         Fun        :: function(),
         Result     :: any().
 transaction(Connection, Fun) when is_function(Fun, 1) ->
