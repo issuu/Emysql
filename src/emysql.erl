@@ -655,14 +655,20 @@ execute(PoolId, StmtName, Args, Timeout, nonblocking) when is_atom(StmtName), is
             unavailable
     end.
 
-%%@doc 事务处理，用来执行函数
-%%@param PoolId: 连接池的id
-%%@param Fun: 待执行的函数
-%%@return 返回值和上面的execute()函数一样
-transaction(PoolId, Fun) ->
+%%@doc transaction
+-spec transaction(PoolId, Fun) -> Result when
+      PoolId :: pid(),
+      Fun    :: function(),
+      Result :: ok_packet() | result_packet() | error_packet().
+transaction(PoolId, Fun) when is_function(Fun, 1) ->
   transaction(PoolId, Fun, default_timeout()).
 
-transaction(PoolId, Fun, Timeout) ->
+-spec transaction(PoolId, Fun, Timeout) -> Result when
+      PoolId :: pid(),
+      Fun    :: function(),
+      Timeout:: non_neg_integer(),
+      Result :: {atomic, any()} | {aborted, any()}.
+transaction(PoolId, Fun, Timeout) when is_function(Fun, 1) ->
   case emysql_conn_mgr:lock_connection(PoolId) of
     Connection when is_record(Connection, emysql_connection) ->
       monitor_work(Connection, Timeout, {emysql_conn, transaction, [Connection, Fun]});

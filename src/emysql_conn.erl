@@ -123,17 +123,18 @@ execute(Connection, StmtName, Args) when is_atom(StmtName), is_list(Args) ->
     end.
 
 
-%%@doc 事务处理
-%%@param Connection:连接 #connection{} 
-%%@param Fun: 待执行的函数
-%%@return 
-transaction(Connection, Fun) ->
+%%@doc transaction
+-spec transaction(Connection, Fun) -> Result when
+        Connection :: #connection{},
+        Fun        :: function(),
+        Result     :: any().
+transaction(Connection, Fun) when is_function(Fun, 1) ->
     case begin_transaction(Connection) of
         #ok_packet{} ->
             try Fun(Connection) of
                 Val ->
                     case commit_transaction(Connection) of
-                        #ok_packet{} -> % 用这种方式检查record，很巧妙啊
+                        #ok_packet{} ->
                             {atomic, Val};
                         #error_packet{} = ErrorPacket ->
                             {aborted, {commit_error, ErrorPacket}}
@@ -142,7 +143,7 @@ transaction(Connection, Fun) ->
                 _What:Exception ->
                     rollback_transaction(Connection),
                     case Exception of
-                        {aborted, Reason} -> %% 这里兼容数据库错误
+                        {aborted, Reason} ->
                             {aborted, Reason};
                         _ ->
                             exit(Exception)
