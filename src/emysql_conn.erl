@@ -250,7 +250,7 @@ open_connection(#pool{pool_id=PoolId, host=Host, port=Port, user=User,
                             caps = Caps,
                             language = Language,
                             test_period = Pool#pool.conn_test_period,
-                            last_test_time = now_seconds(),
+                            last_test_time = os:system_time(1),
                             warnings = Pool#pool.warnings
                            },
             %%-% io:format("~p open connection: ... set db ...~n", [self()]),
@@ -365,7 +365,7 @@ test_connection(Conn, StayLocked) ->
           exit({connection_down, {and_conn_reset_failed, FailedReset}})
       end;
     _ ->
-       NewConn = Conn#emysql_connection{last_test_time = now_seconds()},
+       NewConn = Conn#emysql_connection{last_test_time = os:system_time(1) },
        case StayLocked of
          pass -> emysql_conn_mgr:replace_connection_as_available(Conn, NewConn);
          keep -> emysql_conn_mgr:replace_connection_as_locked(Conn, NewConn)
@@ -376,11 +376,7 @@ test_connection(Conn, StayLocked) ->
 need_test_connection(Conn) ->
    (Conn#emysql_connection.test_period =:= 0) orelse
      (Conn#emysql_connection.last_test_time =:= 0) orelse
-     (Conn#emysql_connection.last_test_time + Conn#emysql_connection.test_period < now_seconds()).
-
-now_seconds() ->
-   {M, S, _} = emysql_util:timestamp(),
-   M * 1000000 + S.
+     (Conn#emysql_connection.last_test_time + Conn#emysql_connection.test_period < (os:system_time(1))).
 
 %%--------------------------------------------------------------------
 %%% Internal functions
