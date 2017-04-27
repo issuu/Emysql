@@ -10,6 +10,8 @@ To use this driver, see the [Samples] further down in this README document.
 
 [Eonblast/Emysql/README](https://github.com/Eonblast/Emysql/README.md)
 
+[inaka/Emysql/README](https://github.com/inaka/Emysql/README.md)
+
 <hr/>
 
  **Which fork/package should I use?** Likely this one, but see [Choosing][].

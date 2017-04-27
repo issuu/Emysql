@@ -5,6 +5,11 @@
 **If you run into trouble, please try the 'stable' branch.**
 
 	git checkout origin/stable
+#### Apr 27 2017 hd | doc
+* timestamp optimize
+
+#### Aug 26 2014 hd | doc
+* Adapted for R18
 
 #### Jun 21 2013 hd | doc
 * Remove utf-8 encoding of binary data

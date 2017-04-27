@@ -40,7 +40,7 @@
 
 -include("emysql.hrl").
 
--record(state, {pools, lockers = dict:new() :: emysql:t_dict()}).
+-record(state, {pools, lockers = dict:new() :: dict:dict(reference(), term())}).
 
 %%====================================================================
 %% API
