@@ -35,14 +35,18 @@
 
 -spec send_and_recv_packet(port(), iodata(), integer()) -> packet_result() | [packet_result()].
 send_and_recv_packet(Sock, Packet, SeqNum) ->
-    case gen_tcp:send(Sock, [<<(size(Packet)):24/little, SeqNum:8>>, Packet]) of
-        ok -> ok;
-        {error, closed} ->
-            %% If we can't communicate on the socket since it has been closed, we exit the process
-            %% at this point. The exit reason is caught by `emysql:monitor_work/3` and since it is
-            %% with the atom `conn_tcp_closed` we special-case that and rehandle it properly
-            exit(tcp_connection_closed)
-    end,
+    Packets = packet_for_send(size(Packet), SeqNum, Packet),
+    lists:foldl(
+        fun(PacketT, _) ->
+            case gen_tcp:send(Sock, PacketT) of
+                ok -> ok;
+                {error, closed} ->
+                    %% If we can't communicate on the socket since it has been closed, we exit the process
+                    %% at this point. The exit reason is caught by `emysql:monitor_work/3` and since it is
+                    %% with the atom `conn_tcp_closed` we special-case that and rehandle it properly
+                    exit(tcp_connection_closed)
+            end
+    end, ok, Packets),
     DefaultTimeout = emysql_app:default_timeout(),
     case response_list(Sock, DefaultTimeout, ?SERVER_MORE_RESULTS_EXIST) of
         % This is a bit murky. It's compatible with former Emysql versions
@@ -51,6 +55,37 @@ send_and_recv_packet(Sock, Packet, SeqNum) ->
         [Record] -> Record;
         List -> List
     end.
+
+packet_for_send(Size, SeqNum, Packet) ->
+    Packets = packet_for_send(Size, SeqNum, Packet, []),
+    lists:reverse(Packets).
+
+%% smaller than 16m, just one package.
+packet_for_send(Size, SeqNum, Packet, []) when Size < ?MAX_LENGTH_PAYLOAD ->
+    [[<<(size(Packet)):24/little, SeqNum:8>>, Packet]];
+%% greater than 16m, more than one package.
+% last package.
+packet_for_send(Size, _SeqNum, Packet, Packets) when Size < ?MAX_LENGTH_PAYLOAD ->
+    [[Packet] | Packets];
+% first package.
+packet_for_send(Size, SeqNum, Packet, []) when Size >= ?MAX_LENGTH_PAYLOAD ->
+    <<PacketNow:?MAX_LENGTH_PAYLOAD/binary, PackageRest/binary>> = Packet,
+    {NextSize, NextSeqNum, AdditionalPackets} = additional_packets(Size, SeqNum),
+    Package = [<<?MAX_LENGTH_PAYLOAD:24/little, SeqNum:8>>, PacketNow, AdditionalPackets],
+    packet_for_send(NextSize, NextSeqNum, PackageRest, [Package]);
+
+packet_for_send(Size, SeqNum, Packet, Packets) when Size >= ?MAX_LENGTH_PAYLOAD ->
+    <<PacketNow:?MAX_LENGTH_PAYLOAD/binary, PackageRest/binary>> = Packet,
+    {NextSize, NextSeqNum, AdditionalPackets} = additional_packets(Size, SeqNum),
+    Package = [PacketNow, AdditionalPackets],
+    packet_for_send(NextSize, NextSeqNum, PackageRest, [Package | Packets]).
+
+additional_packets(Size, SeqNum) when Size < ?MAX_LENGTH_PAYLOAD ->
+    {0, SeqNum, <<>>};
+additional_packets(Size, SeqNum) when Size >= ?MAX_LENGTH_PAYLOAD ->
+    Size1 = Size - ?MAX_LENGTH_PAYLOAD,
+    Size2 = Size1 band ?MAX_LENGTH_PAYLOAD,
+    {Size1, SeqNum + 1, <<Size2:24/little, (SeqNum + 1):8>>}.
 
 response_list(Sock, DefaultTimeout, ServerStatus) -> 
     response_list(Sock, DefaultTimeout, ServerStatus, <<>>).

@@ -29,6 +29,7 @@
 -record(emysql_connection, {id :: string(), 
 			    pool_id :: atom(), 
 			    encoding :: atom(), % maybe could be latin1 | utf8 ?
+          max_allowed_packet :: non_neg_integer(), % max_allowed_packet on bytes.
 			    socket :: inet:socket(), 
 			    version :: number(), 
 			    thread_id :: number(), 
@@ -50,6 +51,7 @@
          port :: number(), 
          database :: string(), 
          encoding :: utf8 | latin1 | {utf8, utf8_unicode_ci} | {utf8, utf8_general_ci},
+         max_allowed_packet :: non_neg_integer(), % max_allowed_packet on bytes.
          available=queue:new() :: emysql:t_queue(), 
          locked=gb_trees:empty() :: emysql:t_gb_tree(),
          waiting=queue:new() :: emysql:t_queue(),
@@ -179,3 +181,13 @@
 %  we discovered that the new statement returns a different
 %  number of result set columns.
 -define(SERVER_STATUS_METADATA_CHANGED, 1024).
+
+% https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_basic_packets.html
+% Sending More Than 16Mb
+%
+% If the payload is larger than or equal to 224-1 bytes the length is set to 224-1 (ff ff ff) and a additional packets are sent with the rest of the payload until the payload of a packet is less than 224-1 bytes.
+% Sending a payload of 16 777 215 (224-1) bytes looks like:
+%
+% ff ff ff 00 ...
+% 00 00 00 01
+-define(MAX_LENGTH_PAYLOAD, 16#ffffff).
