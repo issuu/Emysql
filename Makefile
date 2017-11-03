@@ -1,5 +1,5 @@
 LIBDIR=$(shell erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell)
-VERSION=0.4.1
+VERSION=0.4.6
 PKGNAME=emysql
 APP_NAME=emysql
 
