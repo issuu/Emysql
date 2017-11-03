@@ -324,20 +324,19 @@ cast_fun_for(Type) ->
 identity(Data) -> Data.
 to_integer(Data) -> list_to_integer(binary_to_list(Data)).
 to_float(Data) ->
-    {ok, [Num], _Leftovers} = case io_lib:fread("~f", binary_to_list(Data)) of
-                                           % note: does not need conversion
+    {ok, [Num], _Leftovers} =
+    case io_lib:fread("~f", binary_to_list(Data)) of  % note: does not need conversion
         {error, _} ->
-          case io_lib:fread("~d", binary_to_list(Data)) of  % note: does not need conversion
-            {ok, [_], []} = Res ->
-              Res;
-            {ok, [X], E} ->
-              io_lib:fread("~f", lists:flatten(io_lib:format("~w~s~s" ,[X,".0",E])))
-          end
-        ;
+            case io_lib:fread("~d", binary_to_list(Data)) of  % note: does not need conversion
+                {ok, [_], []} = Res ->
+                    Res;
+                {ok, [X], E} ->
+                    io_lib:fread("~f", lists:flatten(io_lib:format("~w~s~s" ,[X,".0",E])))
+            end;
         Res ->
           Res
     end,
-    Num.
+    erlang:float(Num).
 to_date(Data) ->
     case io_lib:fread("~d-~d-~d", binary_to_list(Data)) of  % note: does not need conversion
         {ok, [Year, Month, Day], _} ->
