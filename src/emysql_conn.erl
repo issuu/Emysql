@@ -466,11 +466,11 @@ encode(Val, list) when is_binary(Val) ->
 encode(Val, binary) when is_atom(Val) ->
     encode(atom_to_list(Val), binary);
 encode(Val, binary) when is_list(Val) ->
-    list_to_binary(quote(Val));
+    list_to_binary(quote(binary_to_list(binary:list_to_bin(Val))));
 encode(Val, binary) when is_binary(Val) ->
     list_to_binary(quote(binary_to_list(Val)));
 encode(Val, list) when is_list(Val) ->
-    quote(Val);
+    quote(binary_to_list(binary:list_to_bin(Val)));
 encode(Val, list) when is_integer(Val) ->
     integer_to_list(Val);
 encode(Val, binary) when is_integer(Val) ->

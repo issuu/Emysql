@@ -14,16 +14,23 @@ To use this driver, see the [Samples] further down in this README document.
 
 <hr/>
 
- **Which fork/package should I use?** Likely this one, but see [Choosing][].
- **Why are there so many?** See [History][].
- **Who used *this* fork?** [Electronic Arts][History].
- **How do I ...?** See [Samples][].
- **Hello ...?** See [Samples][].
+- **Which fork/package should I use?** Likely this one, but see [Choosing][].
 
- **Download:** <https://github.com/Eonblast/Emysql/archives/master>
- **Docs:** <http://eonblast.github.com/Emysql/>
- **Issues:** <https://github.com/Eonblast/Emysql/issues>
- **Repository:** <https://github.com/Eonblast/Emysql>
+- **Why are there so many?** See [History][].
+
+- **Who used *this* fork?** [Electronic Arts][History].
+
+- **How do I ...?** See [Samples][].
+
+- **Hello ...?** See [Samples][].
+
+- **Download:** <https://github.com/Eonblast/Emysql/archives/master>
+
+- **Docs:** <http://eonblast.github.com/Emysql/>
+
+- **Issues:** <https://github.com/Eonblast/Emysql/issues>
+
+- **Repository:** <https://github.com/Eonblast/Emysql>
 
 <hr/>
 
@@ -408,7 +415,7 @@ A [parallel][20] fork from Yariv's branch, not entangled with Dave's tree, is [t
 
 **Emysql** was created from scratch in 2009, specifically to achieve better stability and throughput. It was proposed and written by [Jacob Vorreuter][jv] at Electronic Arts and deployed at Shawn Fanning's Rupture.com, a social network site for gamers. Initially, [Nick Gerakines][ng], Jacob's boss at EA, rewrote large parts of erlang-mysql-server to [clean it up][21]. But some fundamental problems remained and when half a year in, they still could not overcome performance and stability issues, Nick gave Jacob the green light to rewrite it from the ground up because they felt that, in Jacob's words, the Yxa branch had been touched by so many people that it had become more complicated than necessary. According to Jacob, [Bill Warnecke][bw] helped in the early design and testing. They abandoned the separation into three process layers and pulled the socket handling and bit-parsing into one module, coupling the functionality into direct function calls. It looks like they borrowed some chore lines from Magnus but generally created a new, straightforward architecture focused on providing a high performance node. Not only can Emysql open multiple connections, but multiple pools of multiple connections each to multiple database servers, which makes for a strong central OLTP node. Jacob says that Emysql is pretty stable and ran without issues in production at EA. Nick remembers: "The primary way we used it was to have a single Erlang node be the MySQL communication point and allow a number of connected nodes to connect through it to MySQL. We wanted very high throughput with many pids across a grid connecting to it and needed the ability to have a number of MySQL connections open for connection pooling." Rupture was killed in the consolidations of 2009. But Shawn could probably keep the money and we the fond memory of Napster and now, the glistening Emysql.
 
-**Eonblast Emysql** is a continuation fork of [Jacob's work][1], including all his commits and adding [docs][], [samples][], [fixes][] and [extensions][24]. [Henning Diedrich][hd], [Vitaliy Batichko][vb], [Chris Rempel][cr], [Patrick Atambo][pa], [Joel Meyer][jm], [Erik Seres][es], [Alexey Lebedeff][al], [Logan Owen][lo], [Seven Du][sd], [Brendon Hogger][bh], [Bart van Deenen][bd], [Ransom Richardson][rr] and [Qing Liang][ql] have contributed to this branch. Support for stored procedures has been added, remaining issues are being addressed and there is work going on to bring Mnesia-style transactions. The fork is still close to the original, which currently lies dormant, but has started to add features and possibly increased stability.
+**Eonblast Emysql** is a continuation fork of [Jacob's work][1], including all his commits and adding [docs][], [samples][], [fixes][] and [extensions][24]. [Henning Diedrich][hd], [Vitaliy Batichko][vb], [Chris Rempel][cr], [Patrick Atambo][pa], [Joel Meyer][jm], [Erik Seres][es], [Alexey Lebedeff][al], [Logan Owen][lo], [Seven Du][sd], [Brendon Hogger][bh], [Bart van Deenen][bd], [Ransom Richardson][rr] and [Qing Liang][ql] [qingchuduwi][qc] have contributed to this branch. Support for stored procedures has been added, remaining issues are being addressed and there is work going on to bring Mnesia-style transactions. The fork is still close to the original, which currently lies dormant, but has started to add features and possibly increased stability.
 
 Fredrik, Nick and Jacob helped shedding light on the matter. Thank you very much! Errors and omissions are [mine][hd]. Please let me know about any errors you may spot. Thanks. - Henning
 
@@ -477,6 +484,7 @@ Fredrik, Nick and Jacob helped shedding light on the matter. Thank you very much
 [bd]: https://github.com/bvdeenen       "Bart van Deenen"
 [rr]: https://github.com/ransomr        "Ransom Richardson"
 [ql]: https://github.com/qingliangcn    "Qing Liang"
+[qc]: https://github.com/qingchuwudi    "qingchuwudi"
 
 [emysql]:   https://github.com/Eonblast/Emysql
            "Eonblast Emysql Repository"
@@ -487,7 +495,8 @@ Fredrik, Nick and Jacob helped shedding light on the matter. Thank you very much
 [docs]:    http://eonblast.github.com/Emysql/
            "Emysql online docs"
 
-## Links                                                    <a name=Links></a>
+<a name=Links></a>
+## Links
 
 * [Emysql on Github](http://github.com/Eonblast/Emysql)
 * [Original Yxa mysql driver](https://github.com/fredrikt/yxa/tree/master/src/mysql)
@@ -502,20 +511,27 @@ Fredrik, Nick and Jacob helped shedding light on the matter. Thank you very much
  (+)maintained at the time of writing, Feb 2011.
 
 
-
-## TODO                                                     <a name=Todo></a>
+<a name=Todo></a>
+## TODO
 * decrementing pool size could close sockets that are in use
 * spawn individual conn_mgr gen_server processes for each pool
 * allow row results to be returned as binary
 
 
-## License                                                  <a name=License></a>
+<a name=License></a>
+## License
 
-Copyright (c) 2009-2011
+Copyright (c) 2009-2017
+
 Bill Warnecke <bill@rupture.com>,
+
 Jacob Vorreuter <jacob.vorreuter@gmail.com>,
+
 Henning Diedrich <hd2010@eonblast.com>,
+
 Eonblast Corporation <http://www.eonblast.com>.
+
+qingchuwudi <https://github.com/qingchuwudi>.
 
 Permission is  hereby  granted,  free of charge,  to any person
 obtaining  a copy of this software and associated documentation
