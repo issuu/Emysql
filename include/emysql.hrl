@@ -25,96 +25,111 @@
 %% FROM,  OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR
 %% OTHER DEALINGS IN THE SOFTWARE.
 
+-record(pool, { pool_id  :: atom()
+              , size     :: number()
+              , user     :: string()
+              , password :: string()
+              , host     :: string()
+              , port     :: number()
+              , database :: string()
+              , encoding :: utf8 |
+                            latin1 |
+                            {utf8, utf8_unicode_ci} |
+                            {utf8, utf8_general_ci}
+              , available  = queue:new()      :: queue:queue()
+              , locked     = gb_trees:empty() :: gb_tree:gb_tree()
+              , waiting    = queue:new()      :: queue:queue()
+              , start_cmds = []               :: string()
+              , conn_test_period = emysql_app:conn_test_period() :: number()
+              , connect_timeout  = infinity   :: number() | infinity
+              , warnings         = false      :: boolean()
+              }).
 
--record(emysql_connection, {id :: string(), 
-			    pool_id :: atom(), 
-			    encoding :: atom(), % maybe could be latin1 | utf8 ?
-          max_allowed_packet :: non_neg_integer(), % max_allowed_packet on bytes.
-			    socket :: inet:socket(), 
-			    version :: number(), 
-			    thread_id :: number(), 
-			    caps :: number(), 
-			    language :: number(), 
-			    prepared=gb_trees:empty(),
-			    locked_at :: number(), 
-			    alive=true :: boolean(), 
-			    test_period=0 :: number(), 
-			    last_test_time=0 :: number(), 
-			    monitor_ref :: reference(),
-			    warnings=false :: boolean()}).
+-record(emysql_connection,
+        { id                 :: string()
+        , pool_id            :: atom()
+        , encoding           :: atom() % maybe could be latin1 | utf8 ?
+        , socket             :: inet:socket()
+        , version            :: number()
+        , thread_id          :: number()
+        , caps               :: number()
+        , language           :: number
+        , prepared = gb_trees:empty()
+        , locked_at          :: number()
+        , alive = true       :: boolean()
+        , test_period = 0    :: number()
+        , last_test_time = 0 :: number()
+        , monitor_ref        :: reference()
+        , warnings = false   :: boolean()
+        }).
 
--record(pool, {pool_id :: atom(), 
-         size :: number(), 
-         user :: string(), 
-         password :: string(), 
-         host :: string(), 
-         port :: number(), 
-         database :: string(), 
-         encoding :: utf8 | latin1 | {utf8, utf8_unicode_ci} | {utf8, utf8_general_ci},
-         max_allowed_packet :: non_neg_integer(), % max_allowed_packet on bytes.
-         available=queue:new() :: emysql:t_queue(), 
-         locked=gb_trees:empty() :: emysql:t_gb_tree(),
-         waiting=queue:new() :: emysql:t_queue(),
-         start_cmds=[] :: string(), 
-         conn_test_period=0 :: number(), 
-         connect_timeout=infinity :: number() | infinity,
-         warnings=false :: boolean()}).
+-record(greeting,
+        { protocol_version :: number()
+        , server_version   :: binary()
+        , thread_id        :: number()
+        , salt1            :: binary()
+        , salt2            :: binary()
+        , caps             :: number()
+        , caps_high        :: number()
+        , language         :: number()
+        , status           :: number()
+        , seq_num          :: number()
+        , plugin           :: binary()
+        }).
 
--record(greeting, {protocol_version :: number(), 
-                   server_version :: binary(), 
-                   thread_id :: number(), 
-                   salt1 :: binary(), 
-                   salt2 :: binary(), 
-                   caps :: number(), 
-                   caps_high :: number(), 
-                   language :: number(), 
-                   status :: number(), 
-                   seq_num :: number(), 
-                   plugin :: binary()}).
+-record(field, { seq_num :: number()
+               , catalog :: binary()
+               , db :: binary()
+               , table :: binary()
+               , org_table :: binary()
+               , name :: binary()
+               , org_name :: binary()
+               , type :: number()
+               , default :: number()
+               , charset_nr :: number()
+               , length :: number()
+               , flags :: number()
+               , decimals :: number()
+               , decoder :: fun()
+               }).
 
--record(field, {seq_num :: number(), 
-                catalog :: binary(), 
-                db :: binary(), 
-                table :: binary(), 
-                org_table :: binary(), 
-                name :: binary(), 
-                org_name :: binary(), 
-                type :: number(), 
-                default :: number(), 
-                charset_nr :: number(), 
-                length :: number(), 
-                flags :: number(), 
-                decimals :: number(), 
-                decoder :: fun()}).
--record(packet, {size :: number(), 
-		 seq_num :: number(), 
-		 data :: binary()}).
--record(ok_packet, {seq_num :: number(), 
-		    affected_rows :: number(), 
-		    insert_id :: number(), 
-		    status :: number(), 
-		    warning_count :: number(), 
-		    msg :: string()
-			 | {error, string(), unicode:latin1_chardata() | unicode:chardata() | unicode:external_chardata()}
-			 | {incomplete, string(), binary()}}).
+-record(packet, { size :: number()
+                , seq_num :: number()
+                , data :: binary()}).
+
+-record(ok_packet, { seq_num :: number()
+                   , affected_rows :: number()
+                   , insert_id :: number()
+                   , status :: number()
+                   , warning_count :: number()
+                   , msg :: string() |
+                            {error, string(), unicode:latin1_chardata() |
+                                              unicode:chardata() |
+                                              unicode:external_chardata()} |
+                            {incomplete, string(), binary()}
+                   }).
 
 % It's unfortunate that error_packet's status is binary when the status of other
 % packets is a number.
--record(error_packet, {seq_num :: number(), 
-		       code :: number(), 
-		       status :: binary(), 
-		       msg :: [byte()]}).
+-record(error_packet, { seq_num :: number()
+                      , code :: number()
+                      , status :: binary()
+                      , msg :: [byte()]
+                      }).
 
--record(eof_packet, {seq_num :: number(), 
-		     status :: number(), 
-		     warning_count :: number()}). % extended to mySQL 4.1+ format
+-record(eof_packet, { seq_num :: number()
+                    , status :: number()
+                    , warning_count :: number()
+                    }). % extended to mySQL 4.1+ format
 
--record(result_packet, {seq_num :: number(), 
-			field_list :: list(),
-			rows :: any(), extra :: any()}).
+-record(result_packet, { seq_num :: number()
+                       , field_list :: list()
+                       , rows, extra
+                       }).
 
 -define(TIMEOUT, 8000).
 -define(LOCK_TIMEOUT, 5000).
+-define(CONN_TEST_PERIOD, 30000).
 -define(MAXPACKETBYTES, 50000000).
 -define(LONG_PASSWORD, 1).
 -define(LONG_FLAG, 4).
@@ -125,7 +140,6 @@
 -define(TRANSACTIONS, 8192).
 -define(SECURE_CONNECTION, 32768).
 -define(CONNECT_WITH_DB, 8).
--define(CONN_TEST_PERIOD, 28000).
 -define(TCP_RECV_BUFFER, 8192).
 
 
@@ -160,7 +174,7 @@
 
 %% MSQL SERVER STATES (mysql_com.h)
 -define(SERVER_NO_STATUS, 0).
--define(SERVER_STATUS_IN_TRANS, 1).	% Transaction has started */
+-define(SERVER_STATUS_IN_TRANS, 1). % Transaction has started */
 -define(SERVER_STATUS_AUTOCOMMIT, 2). % Server in auto_commit mode */
 -define(SERVER_MORE_RESULTS_EXIST, 8). % Multi query - next query exists */
 -define(SERVER_QUERY_NO_GOOD_INDEX_USED, 16).
