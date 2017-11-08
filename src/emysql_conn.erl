@@ -29,9 +29,9 @@
 -export([set_database/2, set_encoding/2,
         execute/3, transaction/2, prepare/3, unprepare/2,
         open_connections/1, open_connection/1,
-        reset_connection/3, close_connection/1,
-        open_n_connections/2, hstate/1,
-        test_connection/2, need_test_connection/1
+        reset_connection/4, close_connection/1,
+        open_n_connections/3, hstate/1,
+        test_connection/3, need_test_connection/1
 ]).
 
 -include("emysql.hrl").
@@ -153,7 +153,6 @@ transaction(Connection, Fun) when is_function(Fun, 1) ->
             {aborted, {begin_error, ErrorPacket}}
     end.
 
-%% 事务处理的三个部分
 begin_transaction(Connection) ->
     Packet = <<?COM_QUERY, "BEGIN">>,
     emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
@@ -186,8 +185,8 @@ unprepare(Connection, Name) ->
     Packet = <<?COM_QUERY, "DEALLOCATE PREPARE ", (list_to_binary(Name))/binary>>,  % todo: utf8?
     send_recv(Connection, Packet).
 
-open_n_connections(PoolId, N) ->
-    case emysql_conn_mgr:find_pool(PoolId, emysql_conn_mgr:pools()) of
+open_n_connections(PoolServer, PoolId, N) ->
+    case emysql_conn_mgr:find_pool(PoolId, emysql_conn_mgr:pools(PoolServer)) of
         {Pool, _} ->
             lists:foldl(fun(_, {Conns, Reasons}) ->
                 %% Catch {'EXIT',_} errors so newly opened connections are not orphaned.
@@ -223,7 +222,7 @@ open_connections(Pool) ->
                     ),
                     lists:foreach(fun emysql_conn:close_connection/1, AllConns),
                     {error, Reason}
-			end;
+            end;
         false ->
             {ok, Pool}
     end.
@@ -258,7 +257,7 @@ open_connection(#pool{pool_id=PoolId, host=Host, port=Port, user=User,
             ok = set_database_or_die(Connection, Database),
             ok = set_encoding_or_die(Connection, Encoding),
             ok = run_startcmds_or_die(Connection, StartCmds),
-            ok = give_manager_control(Sock),
+            %%ok = give_manager_control(Sock),
             Connection;
         {error, Reason} ->
              %-% io:format("~p open connection: ... ERROR ~p~n", [self(), Reason]),
@@ -274,14 +273,14 @@ handshake(Sock, User, Password) ->
            exit(Reason)
    end.
 
-give_manager_control(Socket) ->
-    case emysql_conn_mgr:give_manager_control(Socket) of
-        {error, Reason} ->
-            gen_tcp:close(Socket),
-            exit({Reason,
-                 "Failed to find conn mgr when opening connection. Make sure crypto is started and emysql.app is in the Erlang path."});
-        ok -> ok
-   end.
+%% give_manager_control(Socket) ->
+%%     case emysql_conn_mgr:give_manager_control(Socket) of
+%%         {error, Reason} ->
+%%             gen_tcp:close(Socket),
+%%             exit({Reason,
+%%                  "Failed to find conn mgr when opening connection. Make sure crypto is started and emysql.app is in the Erlang path."});
+%%         ok -> ok
+%%    end.
 
 set_database_or_die(#emysql_connection { socket = Socket } = Connection, Database) ->
     case set_database(Connection, Database) of
@@ -315,8 +314,8 @@ set_encoding_or_die(#emysql_connection { socket = Socket } = Connection, Encodin
             gen_tcp:close(Socket),
             exit({failed_to_set_encoding, Err2#error_packet.msg})
     end.
-
-reset_connection(Pools, Conn, StayLocked) ->
+ 
+reset_connection(PoolServer, Pools, Conn, StayLocked) ->
     %% if a process dies or times out while doing work
     %% the socket must be closed and the connection reset
     %% in the conn_mgr state. Also a new connection needs
@@ -333,15 +332,15 @@ reset_connection(Pools, Conn, StayLocked) ->
             case catch open_connection(Pool) of
                 #emysql_connection{} = NewConn when StayLocked == pass ->
                     NewConn2 = add_monitor_ref(NewConn, MonitorRef),
-                    ok = emysql_conn_mgr:replace_connection_as_available(Conn, NewConn2),
+                    ok = emysql_conn_mgr:replace_connection_as_available(PoolServer, Conn, NewConn2),
                     NewConn2;
                 #emysql_connection{} = NewConn when StayLocked == keep ->
                     NewConn2 = add_monitor_ref(NewConn, MonitorRef),
-                    ok = emysql_conn_mgr:replace_connection_as_locked(Conn, NewConn2),
+                    ok = emysql_conn_mgr:replace_connection_as_locked(PoolServer, Conn, NewConn2),
                     NewConn2;
                 {'EXIT', Reason} ->
                     DeadConn = Conn#emysql_connection { alive = false, last_test_time = 0 },
-                    emysql_conn_mgr:replace_connection_as_available(Conn, DeadConn),
+                    emysql_conn_mgr:replace_connection_as_available(PoolServer, Conn, DeadConn),
                     {error, {cannot_reopen_in_reset, Reason}}
             end;
         undefined ->
@@ -352,32 +351,32 @@ add_monitor_ref(Conn, MonitorRef) ->
     Conn#emysql_connection{monitor_ref = MonitorRef}.
 
 close_connection(Conn) ->
-	%% garbage collect statements
-	emysql_statements:remove(Conn#emysql_connection.id),
-	ok = gen_tcp:close(Conn#emysql_connection.socket).
+    %% garbage collect statements
+    emysql_statements:remove(Conn#emysql_connection.id),
+    ok = gen_tcp:close(Conn#emysql_connection.socket).
 
-test_connection(Conn, StayLocked) ->
+test_connection(PoolServer, Conn, StayLocked) ->
   case catch emysql_tcp:send_and_recv_packet(Conn#emysql_connection.socket, <<?COM_PING>>, 0) of
     {'EXIT', _} ->
-      case reset_connection(emysql_conn_mgr:pools(), Conn, StayLocked) of
+      case reset_connection(PoolServer, emysql_conn_mgr:pools(PoolServer), Conn, StayLocked) of
         NewConn when is_record(NewConn, emysql_connection) ->
           NewConn;
         {error, FailedReset} ->
           exit({connection_down, {and_conn_reset_failed, FailedReset}})
       end;
     _ ->
-       NewConn = Conn#emysql_connection{last_test_time = now_seconds() },
+       NewConn = Conn#emysql_connection{last_test_time = now_seconds()},
        case StayLocked of
-         pass -> emysql_conn_mgr:replace_connection_as_available(Conn, NewConn);
-         keep -> emysql_conn_mgr:replace_connection_as_locked(Conn, NewConn)
+         pass -> emysql_conn_mgr:replace_connection_as_available(PoolServer, Conn, NewConn);
+         keep -> emysql_conn_mgr:replace_connection_as_locked(PoolServer, Conn, NewConn)
        end,
        NewConn
   end.
 
 need_test_connection(Conn) ->
-   (Conn#emysql_connection.test_period =:= 0) orelse
-     (Conn#emysql_connection.last_test_time =:= 0) orelse
-     (Conn#emysql_connection.last_test_time + Conn#emysql_connection.test_period < now_seconds()).
+    (Conn#emysql_connection.test_period =:= 0) orelse
+    (Conn#emysql_connection.last_test_time =:= 0) orelse
+    (Conn#emysql_connection.last_test_time + Conn#emysql_connection.test_period < now_seconds()).
 
 -ifdef(timestamp_support).
 now_seconds() -> os:system_time(1).
@@ -408,16 +407,16 @@ log_warnings(_Sock, _OtherPacket) ->
 
 set_params(_, _, [], Result) -> Result;
 set_params(Connection, Num, Values, _) ->
-	Packet = set_params_packet(Num, Values),
-	emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
+    Packet = set_params_packet(Num, Values),
+    emysql_tcp:send_and_recv_packet(Connection#emysql_connection.socket, Packet, 0).
 
 set_params_packet(NumStart, Values) ->
-	BinValues = [encode(Val, binary) || Val <- Values],
-	BinNums = [encode(Num, binary) || Num <- lists:seq(NumStart, NumStart + length(Values) - 1)],
-	BinPairs = lists:zip(BinNums, BinValues),
-	Parts = [<<"@", NumBin/binary, "=", ValBin/binary>> || {NumBin, ValBin} <- BinPairs],
-	Sets = list_to_binary(join(Parts, <<",">>)),
-	<<?COM_QUERY, "SET ", Sets/binary>>.
+    BinValues = [encode(Val, binary) || Val <- Values],
+    BinNums = [encode(Num, binary) || Num <- lists:seq(NumStart, NumStart + length(Values) - 1)],
+    BinPairs = lists:zip(BinNums, BinValues),
+    Parts = [<<"@", NumBin/binary, "=", ValBin/binary>> || {NumBin, ValBin} <- BinPairs],
+    Sets = list_to_binary(join(Parts, <<",">>)),
+    <<?COM_QUERY, "SET ", Sets/binary>>.
 
 %% @doc Join elements of list with Sep
 %%
