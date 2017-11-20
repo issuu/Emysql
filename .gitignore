@@ -18,5 +18,14 @@ test/*.html
 test/ct_run*
 test/variables-ct*
 test/ct_default.css
+test/jquery*
+test/ct_log_cache
 logs/*
 .#*
+.tags*
+.rebar
+include/crypto_compat.hrl
+_build
+rebar3.crashdump
+rebar.lock
+.rebar3

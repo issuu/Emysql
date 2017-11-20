@@ -5,6 +5,18 @@
 **If you run into trouble, please try the 'stable' branch.**
 
 	git checkout origin/stable
+#### Nov 03 2017 hd | doc
+* fix: [FLOAT column becomes INT after being selected out](https://github.com/Eonblast/Emysql/issues/176)
+* fix: [Encoding of IO lists is unsafe (missing escaping)](https://github.com/Eonblast/Emysql/issues/182)
+* fix: [When a mysql Query is greater than 16m, it will be crashed](https://github.com/Eonblast/Emysql/issues/186)
+* update: readme
+* update: license
+* update: otp 20.0
+#### Apr 27 2017 hd | doc
+* timestamp optimize
+
+#### Aug 26 2014 hd | doc
+* Adapted for R18
 
 #### Jun 21 2013 hd | doc
 * Remove utf-8 encoding of binary data
