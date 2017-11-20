@@ -50,31 +50,31 @@
         , pool_id            :: atom()
         , encoding           :: atom() % maybe could be latin1 | utf8 ?
         , socket             :: inet:socket()
-        , version            :: number()
+        , version            :: number() | undefined
         , thread_id          :: number()
         , caps               :: number()
-        , language           :: number
+        , language           :: number() | undefined
         , prepared = gb_trees:empty()
-        , locked_at          :: number()
+        , locked_at          :: number() | undefined
         , alive = true       :: boolean()
         , test_period = 0    :: number()
         , last_test_time = 0 :: number()
-        , monitor_ref        :: reference()
+        , monitor_ref        :: reference()  | undefined
         , warnings = false   :: boolean()
         }).
 
 -record(greeting,
-        { protocol_version :: number()
-        , server_version   :: binary()
-        , thread_id        :: number()
-        , salt1            :: binary()
-        , salt2            :: binary()
-        , caps             :: number()
-        , caps_high        :: number()
-        , language         :: number()
-        , status           :: number()
-        , seq_num          :: number()
-        , plugin           :: binary()
+        { protocol_version :: number() | undefined
+        , server_version   :: binary() | undefined
+        , thread_id        :: number() | undefined
+        , salt1            :: binary() | undefined
+        , salt2            :: binary() | undefined
+        , caps             :: number() | undefined
+        , caps_high        :: number() | undefined
+        , language         :: number() | undefined
+        , status           :: number() | undefined
+        , seq_num          :: number() | undefined
+        , plugin           :: binary() | undefined
         }).
 
 -record(field, { seq_num :: number()
@@ -118,12 +118,12 @@
                       }).
 
 -record(eof_packet, { seq_num :: number()
-                    , status :: number()
-                    , warning_count :: number()
+                    , status :: number() | undefined
+                    , warning_count :: number() | undefined
                     }). % extended to mySQL 4.1+ format
 
 -record(result_packet, { seq_num :: number()
-                       , field_list :: list()
+                       , field_list :: list() | undefined
                        , rows, extra
                        }).
 

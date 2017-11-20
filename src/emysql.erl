@@ -351,7 +351,7 @@ add_pool(PoolId, Size, User, Password, Host, Port, Database, Encoding) ->
       Database :: string(),
       Encoding :: utf8 | latin1 | {utf8, utf8_unicode_ci} | {utf8, utf8_general_ci},
       StartCmds :: list(binary()),
-      Result :: {reply, {error, pool_already_exists}, state()} | {reply, ok, state() }.
+      Result :: {error, pool_already_exists} | ok.
 add_pool(PoolId, Size, User, Password, Host, Port, Database, Encoding, StartCmds) ->
     add_pool(PoolId, Size, User, Password, Host, Port, Database, Encoding, StartCmds, infinity).
 
@@ -814,7 +814,7 @@ as_record(Res, Recname, Fields, Fun) ->
 %% fetch_foo() ->
 %%  Res = emysql:execute(pool1, "select * from foo"),
 %%  emysql:as_maps(Res).
--spec as_maps(Result) -> map()
+-spec as_maps(Result) -> [map()]
     when Result :: #result_packet{}.
 as_maps(Res) ->
     emysql_conv:as_maps(Res).
