@@ -131,7 +131,6 @@
         , insert_id/1
         ]).
 
--type state() :: any().
 
 % for record and constant defines
 -include("emysql.hrl").
