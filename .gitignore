@@ -18,3 +18,7 @@ test/*.html
 test/ct_run*
 test/variables-ct*
 test/ct_default.css
+.idea
+*.iml
+_build
+
